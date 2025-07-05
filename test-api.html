@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DALL-E 3 API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #005a8b;
+        }
+        .log-area {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .error {
+            color: #ff0000;
+            background: #ffe6e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #008000;
+            background: #e6ffe6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 DALL-E 3 API Test Lab</h1>
+        
+        <div class="test-section">
+            <h3>1. Configure API Settings</h3>            <label>API Endpoint:</label>
+            <input type="text" id="endpoint" value="https://ai-sosattiaifoundryhub1041793570006.cognitiveservices.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-04-01-preview">
+            
+            <label>API Key:</label>
+            <input type="text" id="apiKey" value="2VNdaTlrtNcc5nOCOiaoqvmPsmmHbnvi0WsSuOKSY7aGFeCEn8NDJQQJ99BDACYeBjFXJ3w3AAAAACOGn1qE">
+            
+            <label>Test Prompt:</label>
+            <input type="text" id="prompt" value="A cartoon drawing of a 3 year old girl playing with a puppy in a park">
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test API Connection</h3>
+            <button onclick="testApiKey()">Test API Key</button>
+            <button onclick="testBasicRequest()">Test Basic Request</button>
+            <button onclick="testFullRequest()">Test Full DALL-E Request</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Debug Output</h3>
+            <div id="logArea" class="log-area">Ready to test API...\n</div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Alternative Testing Methods</h3>
+            <button onclick="showCurlCommand()">Show cURL Command</button>
+            <button onclick="showPowerShellCommand()">Show PowerShell Command</button>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.textContent += `[${timestamp}] ${message}\n`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logArea').textContent = 'Logs cleared...\n';
+        }
+
+        async function testApiKey() {
+            log('🔑 Testing API Key validity...');
+            
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            try {
+                // Test with a simple GET request to see if the key is valid
+                const testUrl = endpoint.split('/images/generations')[0] + '/models?api-version=2024-02-01';
+                log(`📡 Testing endpoint: ${testUrl}`);
+                
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📥 Response Status: ${response.status}`);
+                log(`📥 Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ API Key is valid! Models available: ${JSON.stringify(data, null, 2)}`);
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ API Key test failed: ${errorText}`);
+                }
+            } catch (error) {
+                log(`💥 Network error: ${error.message}`);
+            }
+        }
+
+        async function testBasicRequest() {
+            log('🚀 Testing basic API request...');
+            
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'OPTIONS'
+                });
+                
+                log(`📥 OPTIONS Response Status: ${response.status}`);
+                log(`📥 CORS Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+            } catch (error) {
+                log(`💥 Basic request failed: ${error.message}`);
+            }
+        }
+
+        async function testFullRequest() {
+            log('🎨 Testing full DALL-E 3 request...');
+            
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            
+            const requestBody = {
+                model: 'dall-e-3',
+                prompt: prompt,
+                size: '1024x1024',
+                style: 'vivid',
+                quality: 'standard',
+                n: 1
+            };
+            
+            log(`📤 Request Body: ${JSON.stringify(requestBody, null, 2)}`);
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                log(`📥 Response Status: ${response.status}`);
+                log(`📥 Response Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ SUCCESS! Image generated: ${JSON.stringify(data, null, 2)}`);
+                    if (data.data && data.data[0] && data.data[0].url) {
+                        log(`🖼️ Image URL: ${data.data[0].url}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Request failed: ${errorText}`);
+                }
+            } catch (error) {
+                log(`💥 Request error: ${error.message}`);
+            }
+        }
+
+        function showCurlCommand() {
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            
+            const curlCommand = `curl -X POST "${endpoint}" \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer ${apiKey}" \\
+  -d '{
+    "model": "dall-e-3",
+    "prompt": "${prompt}",
+    "size": "1024x1024",
+    "style": "vivid",
+    "quality": "standard",
+    "n": 1
+  }'`;
+            
+            log('📋 cURL Command:');
+            log(curlCommand);
+        }
+
+        function showPowerShellCommand() {
+            const endpoint = document.getElementById('endpoint').value;
+            const apiKey = document.getElementById('apiKey').value;
+            const prompt = document.getElementById('prompt').value;
+            
+            const psCommand = `$headers = @{
+    "Content-Type" = "application/json"
+    "Authorization" = "Bearer ${apiKey}"
+}
+
+$body = @{
+    model = "dall-e-3"
+    prompt = "${prompt}"
+    size = "1024x1024"
+    style = "vivid"
+    quality = "standard"
+    n = 1
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "${endpoint}" -Method POST -Headers $headers -Body $body`;
+            
+            log('📋 PowerShell Command:');
+            log(psCommand);
+        }
+    </script>
+</body>
+</html>
